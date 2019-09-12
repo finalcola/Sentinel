@@ -42,8 +42,10 @@ public final class SlotChainProvider {
             return slotChainBuilder.build();
         }
 
+        // SPI方式加载SlotChainBuilder
         resolveSlotChainBuilder();
 
+        // 默认实现类
         if (slotChainBuilder == null) {
             RecordLog.warn("[SlotChainProvider] Wrong state when resolving slot chain builder, using default");
             slotChainBuilder = new DefaultSlotChainBuilder();
@@ -51,6 +53,7 @@ public final class SlotChainProvider {
         return slotChainBuilder.build();
     }
 
+    // SPI加载slotChainBuilder
     private static void resolveSlotChainBuilder() {
         for (SlotChainBuilder builder : LOADER) {
             if (builder.getClass() != DefaultSlotChainBuilder.class) {

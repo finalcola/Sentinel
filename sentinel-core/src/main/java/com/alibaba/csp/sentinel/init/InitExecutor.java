@@ -42,12 +42,15 @@ public final class InitExecutor {
             return;
         }
         try {
+            // 加载初始化方法封装类（InitFunc）
             ServiceLoader<InitFunc> loader = ServiceLoader.load(InitFunc.class);
+            // 排序
             List<OrderWrapper> initList = new ArrayList<OrderWrapper>();
             for (InitFunc initFunc : loader) {
                 RecordLog.info("[InitExecutor] Found init func: " + initFunc.getClass().getCanonicalName());
                 insertSorted(initList, initFunc);
             }
+            // 调用初始化方法
             for (OrderWrapper w : initList) {
                 w.func.init();
                 RecordLog.info(String.format("[InitExecutor] Executing %s with order %d",

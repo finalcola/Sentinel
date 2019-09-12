@@ -35,6 +35,7 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
  * A processor slot that dedicates to real time statistics.
  * When entering this slot, we need to separately count the following
  * information:
+ * 用于请求数的实时统计，分别计算下面几种信息：
  * <ul>
  * <li>{@link ClusterNode}: total statistics of a cluster node of the resource ID.</li>
  * <li>Origin node: statistics of a cluster node from different callers/origins.</li>
@@ -55,16 +56,22 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             // Do some checking.
             fireEntry(context, resourceWrapper, node, count, prioritized, args);
 
+            // case: PASS
+
             // Request passed, add thread count and pass count.
+            // 线程数+1
             node.increaseThreadNum();
+            // pass请求+1
             node.addPassRequest(count);
 
+            // 原application对应Node线程数+1，pass请求数+1
             if (context.getCurEntry().getOriginNode() != null) {
                 // Add count for origin node.
                 context.getCurEntry().getOriginNode().increaseThreadNum();
                 context.getCurEntry().getOriginNode().addPassRequest(count);
             }
 
+            // 更新全局的入口流量统计
             if (resourceWrapper.getType() == EntryType.IN) {
                 // Add count for global inbound entry node for global statistics.
                 Constants.ENTRY_NODE.increaseThreadNum();
@@ -76,12 +83,16 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
                 handler.onPass(context, resourceWrapper, node, count, args);
             }
         } catch (PriorityWaitException ex) {
+            // case PriorityWaitException
+
+            // 线程数+1
             node.increaseThreadNum();
             if (context.getCurEntry().getOriginNode() != null) {
                 // Add count for origin node.
                 context.getCurEntry().getOriginNode().increaseThreadNum();
             }
 
+            // 更新全局线程数
             if (resourceWrapper.getType() == EntryType.IN) {
                 // Add count for global inbound entry node for global statistics.
                 Constants.ENTRY_NODE.increaseThreadNum();
@@ -91,6 +102,8 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
                 handler.onPass(context, resourceWrapper, node, count, args);
             }
         } catch (BlockException e) {
+            // case: block
+
             // Blocked, set block exception to current entry.
             context.getCurEntry().setError(e);
 
@@ -100,6 +113,7 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
                 context.getCurEntry().getOriginNode().increaseBlockQps(count);
             }
 
+            // 更新全局阻塞请求数
             if (resourceWrapper.getType() == EntryType.IN) {
                 // Add count for global inbound entry node for global statistics.
                 Constants.ENTRY_NODE.increaseBlockQps(count);
@@ -112,6 +126,8 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
             throw e;
         } catch (Throwable e) {
+            // case: Unexpected error
+
             // Unexpected error, set error to current entry.
             context.getCurEntry().setError(e);
 

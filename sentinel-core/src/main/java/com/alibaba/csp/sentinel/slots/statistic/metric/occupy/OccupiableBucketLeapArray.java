@@ -67,8 +67,9 @@ public class OccupiableBucketLeapArray extends LeapArray<MetricBucket> {
     public long currentWaiting() {
         borrowArray.currentWindow();
         long currentWaiting = 0;
+        // 获取当前时间内的有效窗口列表
         List<MetricBucket> list = borrowArray.values();
-
+        // 累加通过的请求树
         for (MetricBucket window : list) {
             currentWaiting += window.pass();
         }
@@ -77,6 +78,7 @@ public class OccupiableBucketLeapArray extends LeapArray<MetricBucket> {
 
     @Override
     public void addWaiting(long time, int acquireCount) {
+        // 当前窗口PASS数量+1
         WindowWrap<MetricBucket> window = borrowArray.currentWindow(time);
         window.value().add(MetricEvent.PASS, acquireCount);
     }

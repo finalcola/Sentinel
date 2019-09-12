@@ -56,6 +56,7 @@ public class AuthoritySlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             return;
         }
 
+        // origin是否在黑名单里
         for (AuthorityRule rule : rules) {
             if (!AuthorityRuleChecker.passCheck(rule, context)) {
                 throw new AuthorityException(context.getOrigin(), rule);

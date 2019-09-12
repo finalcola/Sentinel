@@ -30,6 +30,11 @@ public abstract class AbstractRule implements Rule {
 
     /**
      * <p>
+     * 1、拦截指定appName（相等则拦截）
+     * 2、如果limitApp为"default"，则表示拦截所有app
+     * 3、如果limitApp为"other"，表示针对除 {some_origin_name} 以外的其余调用方的流量进行流量控制。
+     *      例如，资源NodeA配置了一条针对调用者 caller1 的限流规则，同时又配置了一条调用者为 other
+     *      的规则，那么任意来自非 caller1 对 NodeA 的调用，都不能超过 other 这条规则定义的阈值。
      * Application name that will be limited by origin.
      * The default limitApp is {@code default}, which means allowing all origin apps.
      * </p>

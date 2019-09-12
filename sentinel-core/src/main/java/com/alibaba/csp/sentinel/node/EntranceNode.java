@@ -30,6 +30,7 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  * current context does't have one. Note that same context name will share same {@link EntranceNode}
  * globally.
  * </p>
+ * 调用树的增强，提供合并子节点计算结果的功能
  *
  * @author qinan.qn
  * @see ContextUtil

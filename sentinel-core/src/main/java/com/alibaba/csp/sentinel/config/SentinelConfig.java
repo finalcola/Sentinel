@@ -57,7 +57,9 @@ public class SentinelConfig {
 
     static {
         try {
+            // 设置默认配置
             initialize();
+            // 加载配置文件
             loadProps();
             resolveAppType();
             RecordLog.info("[SentinelConfig] Application type resolved: " + appType);
@@ -93,7 +95,9 @@ public class SentinelConfig {
     }
 
     private static void loadProps() {
+        // 加载配置文件
         Properties properties = SentinelConfigLoader.getProperties();
+        // 将配置存放到props中
         for (Object key : properties.keySet()) {
             setConfig((String) key, (String) properties.get(key));
         }

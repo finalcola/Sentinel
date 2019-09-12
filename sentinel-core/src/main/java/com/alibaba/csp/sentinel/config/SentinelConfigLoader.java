@@ -45,19 +45,23 @@ public final class SentinelConfigLoader {
     private static Properties properties = new Properties();
 
     static {
+        // 加载配置文件
         load();
     }
 
     private static void load() {
+        // 配置文件地址（默认classpath:sentinel.properties）
         String fileName = System.getProperty(SENTINEL_CONFIG);
         if (StringUtil.isBlank(fileName)) {
             fileName = DEFAULT_SENTINEL_CONFIG_FILE;
         }
 
+        // 加载Properties
         Properties p = ConfigUtil.loadProperties(fileName);
 
         // Compatible with legacy config file path.
         if (p == null) {
+            // ${user.home}/logs/csp/${appName}
             String path = addSeparator(System.getProperty(USER_HOME)) + DIR_NAME + File.separator;
             fileName = path + AppNameUtil.getAppName() + ".properties";
             File file = new File(fileName);
@@ -71,6 +75,7 @@ public final class SentinelConfigLoader {
             properties.putAll(p);
         }
 
+        // 加载系统配置
         for (Map.Entry<Object, Object> entry : new CopyOnWriteArraySet<>(System.getProperties().entrySet())) {
             String configKey = entry.getKey().toString();
             String newConfigValue = entry.getValue().toString();

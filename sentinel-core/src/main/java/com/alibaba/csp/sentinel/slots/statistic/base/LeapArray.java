@@ -40,8 +40,11 @@ import com.alibaba.csp.sentinel.util.TimeUtil;
  */
 public abstract class LeapArray<T> {
 
+    // 窗口长度
     protected int windowLengthInMs;
+    // 窗口数量
     protected int sampleCount;
+    // 时长
     protected int intervalInMs;
 
     protected final AtomicReferenceArray<WindowWrap<T>> array;
@@ -71,7 +74,7 @@ public abstract class LeapArray<T> {
 
     /**
      * Get the bucket at current timestamp.
-     *
+     * 获取当前时间对应的窗口
      * @return the bucket at current timestamp
      */
     public WindowWrap<T> currentWindow() {
@@ -95,18 +98,20 @@ public abstract class LeapArray<T> {
      */
     protected abstract WindowWrap<T> resetWindowTo(WindowWrap<T> windowWrap, long startTime);
 
+    // 计算指定时间对应窗口位置
     private int calculateTimeIdx(/*@Valid*/ long timeMillis) {
         long timeId = timeMillis / windowLengthInMs;
         // Calculate current index so we can map the timestamp to the leap array.
         return (int)(timeId % array.length());
     }
 
+    // 计算出窗口的开始时间
     protected long calculateWindowStart(/*@Valid*/ long timeMillis) {
         return timeMillis - timeMillis % windowLengthInMs;
     }
 
     /**
-     * Get bucket item at provided timestamp.
+     * 获取时间戳对应的窗口
      *
      * @param timeMillis a valid timestamp in milliseconds
      * @return current bucket item at provided timestamp if the time is valid; null if time is invalid
@@ -116,8 +121,9 @@ public abstract class LeapArray<T> {
             return null;
         }
 
+        // 计算指定时间对应窗口位置
         int idx = calculateTimeIdx(timeMillis);
-        // Calculate current bucket start time.
+        // 计算出窗口的开始时间
         long windowStart = calculateWindowStart(timeMillis);
 
         /*
@@ -151,6 +157,7 @@ public abstract class LeapArray<T> {
                     Thread.yield();
                 }
             } else if (windowStart == old.windowStart()) {
+                // 原窗口开始时间未过期
                 /*
                  *     B0       B1      B2     B3      B4
                  * ||_______|_______|_______|_______|_______||___
@@ -164,6 +171,7 @@ public abstract class LeapArray<T> {
                  */
                 return old;
             } else if (windowStart > old.windowStart()) {
+                // 原窗口过期
                 /*
                  *   (old)
                  *             B0       B1      B2    NULL      B4
@@ -182,6 +190,7 @@ public abstract class LeapArray<T> {
                  * bucket is deprecated, so in most cases it won't lead to performance loss.
                  */
                 if (updateLock.tryLock()) {
+                    // 更新窗口开始时间
                     try {
                         // Successfully get the update lock, now we reset the bucket.
                         return resetWindowTo(old, windowStart);
@@ -193,6 +202,7 @@ public abstract class LeapArray<T> {
                     Thread.yield();
                 }
             } else if (windowStart < old.windowStart()) {
+                // 异常情况
                 // Should not go through here, as the provided time is already behind.
                 return new WindowWrap<T>(windowLengthInMs, windowStart, newEmptyBucket(timeMillis));
             }
@@ -201,6 +211,7 @@ public abstract class LeapArray<T> {
 
     /**
      * Get the previous bucket item before provided timestamp.
+     * 获取前一个窗口
      *
      * @param timeMillis a valid timestamp in milliseconds
      * @return the previous bucket item before provided timestamp
@@ -262,6 +273,7 @@ public abstract class LeapArray<T> {
      * @return true if the bucket is deprecated; otherwise false
      */
     public boolean isWindowDeprecated(/*@NonNull*/ WindowWrap<T> windowWrap) {
+        // 窗口是否已过期
         return isWindowDeprecated(TimeUtil.currentTimeMillis(), windowWrap);
     }
 
@@ -272,13 +284,14 @@ public abstract class LeapArray<T> {
     /**
      * Get valid bucket list for entire sliding window.
      * The list will only contain "valid" buckets.
-     *
+     * 获取validTime之前未过期的窗口
      * @return valid bucket list for entire sliding window.
      */
     public List<WindowWrap<T>> list() {
         return list(TimeUtil.currentTimeMillis());
     }
 
+    // 获取validTime之前未过期的窗口
     public List<WindowWrap<T>> list(long validTime) {
         int size = array.length();
         List<WindowWrap<T>> result = new ArrayList<WindowWrap<T>>(size);
@@ -324,6 +337,7 @@ public abstract class LeapArray<T> {
         return values(TimeUtil.currentTimeMillis());
     }
 
+    // 获取指定时间戳之前的窗口列表
     public List<T> values(long timeMillis) {
         if (timeMillis < 0) {
             return new ArrayList<T>();
@@ -371,7 +385,7 @@ public abstract class LeapArray<T> {
 
     /**
      * Get sample count (total amount of buckets).
-     *
+     * 窗口数量
      * @return sample count
      */
     public int getSampleCount() {

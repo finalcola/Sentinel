@@ -37,6 +37,7 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
  * Sentinel System Rule makes the inbound traffic and capacity meet. It takes
  * average rt, qps, thread count of incoming requests into account. And it also
  * provides a measurement of system's load, but only available on Linux.
+ * 用于系统级规则实现。限制平均rt、qps、线程数等；linux环境下还会系统负载的限流
  * </p>
  * <p>
  * rt, qps, thread count is easy to understand. If the incoming requests'
@@ -75,6 +76,7 @@ public class SystemRuleManager {
     private static volatile long maxThread = Long.MAX_VALUE;
     /**
      * mark whether the threshold are set by user.
+     * 表示用户是否设置了临界值
      */
     private static volatile boolean highestSystemLoadIsSet = false;
     private static volatile boolean highestCpuUsageIsSet = false;
@@ -82,18 +84,24 @@ public class SystemRuleManager {
     private static volatile boolean maxRtIsSet = false;
     private static volatile boolean maxThreadIsSet = false;
 
+    // 是否检查上面设置的临界值(解析rule后才会设置为true)
     private static AtomicBoolean checkSystemStatus = new AtomicBoolean(false);
 
+    // 用于监听系统CPU和系统负载值
     private static SystemStatusListener statusListener = null;
+    // 系统配置的监听器，解析Rule
     private final static SystemPropertyListener listener = new SystemPropertyListener();
+    // 当前rule配置
     private static SentinelProperty<List<SystemRule>> currentProperty = new DynamicSentinelProperty<List<SystemRule>>();
 
+    // 调度SystemStatusListener
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     private final static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1,
         new NamedThreadFactory("sentinel-system-status-record-task", true));
 
     static {
         checkSystemStatus.set(false);
+        // 每秒检查一次系统负载
         statusListener = new SystemStatusListener();
         scheduler.scheduleAtFixedRate(statusListener, 5, 1, TimeUnit.SECONDS);
         currentProperty.addListener(listener);
@@ -102,7 +110,7 @@ public class SystemRuleManager {
     /**
      * Listen to the {@link SentinelProperty} for {@link SystemRule}s. The property is the source
      * of {@link SystemRule}s. System rules can also be set by {@link #loadRules(List)} directly.
-     *
+     * 更新监听的配置实例
      * @param property the property to listen.
      */
     public static void register2Property(SentinelProperty<List<SystemRule>> property) {
@@ -115,7 +123,7 @@ public class SystemRuleManager {
 
     /**
      * Load {@link SystemRule}s, former rules will be replaced.
-     *
+     * 加载系统rule配置
      * @param rules new rules to load.
      */
     public static void loadRules(List<SystemRule> rules) {
@@ -124,7 +132,7 @@ public class SystemRuleManager {
 
     /**
      * Get a copy of the rules.
-     *
+     * 获取当前rule的配置
      * @return a new copy of the rules.
      */
     public static List<SystemRule> getRules() {
@@ -183,12 +191,14 @@ public class SystemRuleManager {
         return maxThread;
     }
 
+    // 系统配置监听器，监听配置的修改
     static class SystemPropertyListener extends SimplePropertyListener<List<SystemRule>> {
 
         @Override
         public void configUpdate(List<SystemRule> rules) {
             restoreSetting();
             // systemRules = rules;
+            // 加载系统配置的规则
             if (rules != null && rules.size() >= 1) {
                 for (SystemRule rule : rules) {
                     loadSystemConf(rule);
@@ -211,9 +221,11 @@ public class SystemRuleManager {
                 qps));
         }
 
+        // 重置所有设置
         protected void restoreSetting() {
             checkSystemStatus.set(false);
 
+            // 重置
             // should restore changes
             highestSystemLoad = Double.MAX_VALUE;
             highestCpuUsage = Double.MAX_VALUE;
@@ -246,6 +258,7 @@ public class SystemRuleManager {
         return highestCpuUsage;
     }
 
+    // 解析规则
     public static void loadSystemConf(SystemRule rule) {
         boolean checkStatus = false;
         // Check if it's valid.
@@ -285,7 +298,7 @@ public class SystemRuleManager {
 
     /**
      * Apply {@link SystemRule} to the resource. Only inbound traffic will be checked.
-     *
+     * 检查是否超出临界值，如果超出会抛出异常
      * @param resourceWrapper the resource.
      * @throws BlockException when any system rule's threshold is exceeded.
      */
@@ -296,6 +309,7 @@ public class SystemRuleManager {
         }
 
         // for inbound traffic only
+        // 只校验入口流量
         if (resourceWrapper.getType() != EntryType.IN) {
             return;
         }

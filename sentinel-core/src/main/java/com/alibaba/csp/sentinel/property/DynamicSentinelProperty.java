@@ -34,6 +34,7 @@ public class DynamicSentinelProperty<T> implements SentinelProperty<T> {
         this.value = value;
     }
 
+    // 添加listener，初次添加会传入当前值
     @Override
     public void addListener(PropertyListener<T> listener) {
         listeners.add(listener);
@@ -47,11 +48,13 @@ public class DynamicSentinelProperty<T> implements SentinelProperty<T> {
 
     @Override
     public boolean updateValue(T newValue) {
+        // 未发生更新
         if (isEqual(value, newValue)) {
             return false;
         }
         RecordLog.info("[DynamicSentinelProperty] Config will be updated to: " + newValue);
 
+        // 通知listener
         value = newValue;
         for (PropertyListener<T> listener : listeners) {
             listener.configUpdate(newValue);

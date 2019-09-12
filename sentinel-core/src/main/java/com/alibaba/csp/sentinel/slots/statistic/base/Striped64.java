@@ -15,6 +15,7 @@ import java.util.Random;
  * A package-local class holding common representation and mechanics
  * for classes supporting dynamic striping on 64bit values. The class
  * extends Number so that concrete subclasses must publicly do so.
+ * 并发计数器
  */
 abstract class Striped64 extends Number {
     /*
@@ -97,6 +98,7 @@ abstract class Striped64 extends Number {
 
         Cell(long x) { value = x; }
 
+        // cas修改value
         final boolean cas(long cmp, long val) {
             return UNSAFE.compareAndSwapLong(this, valueOffset, cmp, val);
         }
@@ -184,6 +186,7 @@ abstract class Striped64 extends Number {
 
     /**
      * CASes the busy field from 0 to 1 to acquire lock.
+     * CAS 将busy从0修改为1
      */
     final boolean casBusy() {
         return UNSAFE.compareAndSwapInt(this, busyOffset, 0, 1);
@@ -206,6 +209,7 @@ abstract class Striped64 extends Number {
      * explanation. This method suffers the usual non-modularity
      * problems of optimistic retry code, relying on rechecked sets of
      * reads.
+     * 通过CAS操作，对cell数组的value进行更新
      *
      * @param x              the value
      * @param hc             the hash code holder
@@ -221,8 +225,10 @@ abstract class Striped64 extends Number {
             long v;
             if ((as = cells) != null && (n = as.length) > 0) {
                 if ((a = as[(n - 1) & h]) == null) {
+                    // 通过CAS初始化Cell
                     if (busy == 0) {            // Try to attach new Cell
                         Cell r = new Cell(x);   // Optimistically create
+                        // CAS更新busy，创建新Cell
                         if (busy == 0 && casBusy()) {
                             boolean created = false;
                             try {               // Recheck under lock
@@ -244,14 +250,24 @@ abstract class Striped64 extends Number {
                     collide = false;
                 } else if (!wasUncontended)       // CAS already known to fail
                 {
+                    // 存在竞争
                     wasUncontended = true;      // Continue after rehash
-                } else if (a.cas(v = a.value, fn(v, x))) { break; } else if (n >= NCPU || cells != as) {
+                } else if (a.cas(v = a.value, fn(v, x))) {
+                    // CAS修改Cell的值
+                    break;
+                } else if (n >= NCPU || cells != as) {
+                    // cell数组大小上限是CPU数量，或者cell数组已经被更新，代表不存在冲突(不会进行扩容)
                     collide = false;            // At max size or stale
-                } else if (!collide) { collide = true; } else if (busy == 0 && casBusy()) {
+                } else if (!collide) {
+                    collide = true;
+                } else if (busy == 0 && casBusy()) {
+                    // 尝试扩容cell数组
                     try {
                         if (cells == as) {      // Expand table unless stale
                             Cell[] rs = new Cell[n << 1];
-                            for (int i = 0; i < n; ++i) { rs[i] = as[i]; }
+                            for (int i = 0; i < n; ++i) {
+                                rs[i] = as[i];
+                            }
                             cells = rs;
                         }
                     } finally {
@@ -264,6 +280,7 @@ abstract class Striped64 extends Number {
                 h ^= h >>> 17;
                 h ^= h << 5;
             } else if (busy == 0 && cells == as && casBusy()) {
+                // cas,尝试初始化cell数组
                 boolean init = false;
                 try {                           // Initialize table
                     if (cells == as) {
@@ -275,7 +292,9 @@ abstract class Striped64 extends Number {
                 } finally {
                     busy = 0;
                 }
-                if (init) { break; }
+                if (init) {
+                    break;
+                }
             } else if (casBase(v = base, fn(v, x))) {
                 break;                          // Fall back on using base
             }
@@ -285,6 +304,7 @@ abstract class Striped64 extends Number {
 
     /**
      * Sets base and all cells to the given value.
+     * 初始化base和cell数组的value
      */
     final void internalReset(long initialValue) {
         Cell[] as = cells;
@@ -304,6 +324,7 @@ abstract class Striped64 extends Number {
     private static final long busyOffset;
 
     static {
+        // 初始化UNSAFE
         try {
             UNSAFE = getUnsafe();
             Class<?> sk = Striped64.class;

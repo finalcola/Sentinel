@@ -21,12 +21,14 @@ import com.alibaba.csp.sentinel.slots.statistic.base.LongAdder;
 
 /**
  * Represents metrics data in a period of time span.
+ * 存放一个时间段内的监控数据(每种数据对应一个累加器)
  *
  * @author jialiang.linjl
  * @author Eric Zhao
  */
 public class MetricBucket {
 
+    // 计数器数组,每种事件状态都会对应一个计数器
     private final LongAdder[] counters;
 
     private volatile long minRt;
@@ -40,6 +42,7 @@ public class MetricBucket {
         initMinRt();
     }
 
+    // 根据另一个bucket初始化
     public MetricBucket reset(MetricBucket bucket) {
         for (MetricEvent event : MetricEvent.values()) {
             counters[event.ordinal()].reset();
@@ -55,6 +58,7 @@ public class MetricBucket {
 
     /**
      * Reset the adders.
+     * 初始化计数器
      *
      * @return new metric bucket in initial state
      */
@@ -66,10 +70,12 @@ public class MetricBucket {
         return this;
     }
 
+    // 获取对应事件的数量
     public long get(MetricEvent event) {
         return counters[event.ordinal()].sum();
     }
 
+    // 对应事件数量累加
     public MetricBucket add(MetricEvent event, long n) {
         counters[event.ordinal()].add(n);
         return this;

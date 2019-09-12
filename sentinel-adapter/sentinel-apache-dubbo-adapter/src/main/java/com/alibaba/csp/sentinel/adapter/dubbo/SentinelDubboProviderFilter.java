@@ -58,10 +58,12 @@ public class SentinelDubboProviderFilter implements Filter {
         Entry interfaceEntry = null;
         Entry methodEntry = null;
         try {
+            // 资源名、接口名
             String resourceName = DubboUtils.getResourceName(invoker, invocation, DubboConfig.getDubboProviderPrefix());
             String interfaceName = invoker.getInterface().getName();
             // Only need to create entrance context at provider side, as context will take effect
             // at entrance of invocation chain only (for inbound traffic).
+            // 创建Context(ThreadLocal)
             ContextUtil.enter(resourceName, application);
             interfaceEntry = SphU.entry(interfaceName, EntryType.IN);
             methodEntry = SphU.entry(resourceName, EntryType.IN, 1, invocation.getArguments());

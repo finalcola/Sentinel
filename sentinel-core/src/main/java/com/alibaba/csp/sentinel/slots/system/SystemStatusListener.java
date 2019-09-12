@@ -24,6 +24,7 @@ import com.alibaba.csp.sentinel.util.StringUtil;
 import com.sun.management.OperatingSystemMXBean;
 
 /**
+ * 监听系统负载，并打印日志
  * @author jialiang.linjl
  */
 public class SystemStatusListener implements Runnable {

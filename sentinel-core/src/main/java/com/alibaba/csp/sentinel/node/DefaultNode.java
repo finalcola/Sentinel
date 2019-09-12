@@ -34,7 +34,7 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  * This class may have a list of sub {@link DefaultNode}s. Child nodes will be created when
  * calling {@link SphU}#entry() or {@link SphO}@entry() multiple times in the same {@link Context}.
  * </p>
- *
+ * 关联 节点->资源、集群以及子节点
  * @author qinan.qn
  * @see NodeSelectorSlot
  */
@@ -42,16 +42,18 @@ public class DefaultNode extends StatisticNode {
 
     /**
      * The resource associated with the node.
+     * 当前node关联的资源
      */
     private ResourceWrapper id;
 
     /**
      * The list of all child nodes.
+     * 子节点
      */
     private volatile Set<Node> childList = new HashSet<>();
 
     /**
-     * Associated cluster node.
+     * 关联的集群节点
      */
     private ClusterNode clusterNode;
 

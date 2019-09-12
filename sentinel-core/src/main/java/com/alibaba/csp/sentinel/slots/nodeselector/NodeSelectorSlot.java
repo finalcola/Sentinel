@@ -151,6 +151,7 @@ public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
          * {@link ClusterNode}. See {@link ClusterBuilderSlot} for detail.
          */
         DefaultNode node = map.get(context.getName());
+        // 创建context(applicationName)对应的DefaultNode
         if (node == null) {
             synchronized (this) {
                 node = map.get(context.getName());

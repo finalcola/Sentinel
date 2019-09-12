@@ -45,6 +45,7 @@ public class LongAdder extends Striped64 implements Serializable {
 
     /**
      * Version of plus for use in retryUpdate
+     * 用于累加计数器的操作
      */
     @Override
     final long fn(long v, long x) { return v + x; }
@@ -66,6 +67,7 @@ public class LongAdder extends Striped64 implements Serializable {
         HashCode hc;
         Cell a;
         int n;
+        // CAS修改base，失败后修改cell数组的value
         if ((as = cells) != null || !casBase(b = base, b + x)) {
             boolean uncontended = true;
             int h = (hc = threadHashCode.get()).code;
@@ -99,6 +101,7 @@ public class LongAdder extends Striped64 implements Serializable {
      * @return the sum
      */
     public long sum() {
+        // sum=base+Sum(cells.value)
         long sum = base;
         Cell[] as = cells;
         if (as != null) {
@@ -117,6 +120,7 @@ public class LongAdder extends Striped64 implements Serializable {
      * effective if there are no concurrent updates.  Because this
      * method is intrinsically racy, it should only be used when it is
      * known that no threads are concurrently updating.
+     * 将base和cell数组的value重置为0
      */
     public void reset() {
         internalReset(0L);
@@ -133,6 +137,7 @@ public class LongAdder extends Striped64 implements Serializable {
      * @return the sum
      */
     public long sumThenReset() {
+        // 求和后初始化为0
         long sum = base;
         Cell[] as = cells;
         base = 0L;

@@ -28,7 +28,7 @@ import com.alibaba.csp.sentinel.slots.statistic.metric.occupy.OccupiableBucketLe
 
 /**
  * The basic metric class in Sentinel using a {@link BucketLeapArray} internal.
- *
+ * 滑动窗口计数器
  * @author jialiang.linjl
  * @author Eric Zhao
  */
@@ -67,6 +67,7 @@ public class ArrayMetric implements Metric {
         return success;
     }
 
+    // 窗口中success请求数量的最大值
     @Override
     public long maxSuccess() {
         data.currentWindow();
@@ -151,10 +152,12 @@ public class ArrayMetric implements Metric {
         return Math.max(1, rt);
     }
 
+    // 获取当前窗口的计数信息
     @Override
     public List<MetricNode> details() {
         List<MetricNode> details = new ArrayList<MetricNode>();
         data.currentWindow();
+        // 获取validTime之前未过期的窗口
         List<WindowWrap<MetricBucket>> list = data.list();
         for (WindowWrap<MetricBucket> window : list) {
             if (window == null) {
@@ -232,6 +235,7 @@ public class ArrayMetric implements Metric {
         data.debug(System.currentTimeMillis());
     }
 
+    // 前一个窗口的阻塞请求数
     @Override
     public long previousWindowBlock() {
         data.currentWindow();
@@ -242,6 +246,7 @@ public class ArrayMetric implements Metric {
         return wrap.value().block();
     }
 
+    // 前一个窗口的通过请求数
     @Override
     public long previousWindowPass() {
         data.currentWindow();
@@ -252,6 +257,7 @@ public class ArrayMetric implements Metric {
         return wrap.value().pass();
     }
 
+    // 累加操作
     public void add(MetricEvent event, long count) {
         data.currentWindow().value().add(event, count);
     }

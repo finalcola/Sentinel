@@ -82,7 +82,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *                                                      |
  *                                                    request
  * </pre>
- *
+ * 带有计数器功能的滑动窗口封装类
  * @author qinan.qn
  * @author jialiang.linjl
  */
@@ -91,6 +91,7 @@ public class StatisticNode implements Node {
     /**
      * Holds statistics of the recent {@code INTERVAL} seconds. The {@code INTERVAL} is divided into time spans
      * by given {@code sampleCount}.
+     * 每秒内的请求计数
      */
     private transient volatile Metric rollingCounterInSecond = new ArrayMetric(SampleCountProperty.SAMPLE_COUNT,
         IntervalProperty.INTERVAL);
@@ -98,11 +99,13 @@ public class StatisticNode implements Node {
     /**
      * Holds statistics of the recent 60 seconds. The windowLengthInMs is deliberately set to 1000 milliseconds,
      * meaning each bucket per second, in this way we can get accurate statistics of each second.
+     * 每分内的请求计数
      */
     private transient Metric rollingCounterInMinute = new ArrayMetric(60, 60 * 1000, false);
 
     /**
      * The counter for thread count.
+     * 线程计数器
      */
     private LongAdder curThreadNum = new LongAdder();
 
@@ -117,12 +120,15 @@ public class StatisticNode implements Node {
         long currentTime = TimeUtil.currentTimeMillis();
         currentTime = currentTime - currentTime % 1000;
         Map<Long, MetricNode> metrics = new ConcurrentHashMap<>();
+        // 当前分钟时间段内的窗口列表
         List<MetricNode> nodesOfEverySecond = rollingCounterInMinute.details();
         long newLastFetchTime = lastFetchTime;
         // Iterate metrics of all resources, filter valid metrics (not-empty and up-to-date).
         for (MetricNode node : nodesOfEverySecond) {
+            // 有效窗口
             if (isNodeInTime(node, currentTime) && isValidMetricNode(node)) {
                 metrics.put(node.getTimestamp(), node);
+                // 最晚窗口的开始时间
                 newLastFetchTime = Math.max(newLastFetchTime, node.getTimestamp());
             }
         }
@@ -145,6 +151,7 @@ public class StatisticNode implements Node {
         rollingCounterInSecond = new ArrayMetric(SampleCountProperty.SAMPLE_COUNT, IntervalProperty.INTERVAL);
     }
 
+    // 请求总数（通过数量+阻塞数量）
     @Override
     public long totalRequest() {
         return rollingCounterInMinute.pass() + rollingCounterInMinute.block();
@@ -155,6 +162,7 @@ public class StatisticNode implements Node {
         return rollingCounterInMinute.block();
     }
 
+    // 阻塞QPS=阻塞请求数/(窗口长度/1000ms)
     @Override
     public double blockQps() {
         return rollingCounterInSecond.block() / rollingCounterInSecond.getWindowIntervalInSec();
@@ -205,6 +213,7 @@ public class StatisticNode implements Node {
         return rollingCounterInSecond.success() / rollingCounterInSecond.getWindowIntervalInSec();
     }
 
+    // success请求的最大QPS=(滑动窗口success请求数量最大值)*滑动窗口数量
     @Override
     public double maxSuccessQps() {
         return rollingCounterInSecond.maxSuccess() * rollingCounterInSecond.getSampleCount();

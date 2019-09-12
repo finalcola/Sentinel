@@ -33,6 +33,7 @@ public final class DubboUtils {
         return invocation.getAttachment(SENTINEL_DUBBO_APPLICATION_KEY, defaultValue);
     }
 
+    // 获取资源名（className:methodName(parameterTypes)）
     public static String getResourceName(Invoker<?> invoker, Invocation invocation) {
         StringBuilder buf = new StringBuilder(64);
         buf.append(invoker.getInterface().getName())
@@ -51,6 +52,7 @@ public final class DubboUtils {
         return buf.toString();
     }
 
+    // 获取资源名（className:methodName(parameterTypes)）
     public static String getResourceName(Invoker<?> invoker, Invocation invocation, String prefix) {
         if (StringUtil.isNotBlank(prefix)) {
             return new StringBuilder(64)

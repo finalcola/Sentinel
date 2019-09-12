@@ -117,6 +117,7 @@ public class ContextUtil {
         return trueEnter(name, origin);
     }
 
+    // 获取当前资源对应的context
     protected static Context trueEnter(String name, String origin) {
         Context context = contextHolder.get();
         if (context == null) {
@@ -127,6 +128,7 @@ public class ContextUtil {
                     setNullContext();
                     return NULL_CONTEXT;
                 } else {
+                    // 新建Context
                     try {
                         LOCK.lock();
                         node = contextNameNodeMap.get(name);
@@ -135,10 +137,13 @@ public class ContextUtil {
                                 setNullContext();
                                 return NULL_CONTEXT;
                             } else {
+                                // 新建节点
                                 node = new EntranceNode(new StringResourceWrapper(name, EntryType.IN), null);
                                 // Add entrance node.
+                                // 添加到root节点
                                 Constants.ROOT.addChild(node);
 
+                                // 更新contextNameNodeMap
                                 Map<String, DefaultNode> newMap = new HashMap<>(contextNameNodeMap.size() + 1);
                                 newMap.putAll(contextNameNodeMap);
                                 newMap.put(name, node);
@@ -150,6 +155,7 @@ public class ContextUtil {
                     }
                 }
             }
+            // 新建context
             context = new Context(node, name);
             context.setOrigin(origin);
             contextHolder.set(context);

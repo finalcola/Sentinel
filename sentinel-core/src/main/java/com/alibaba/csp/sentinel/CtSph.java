@@ -116,6 +116,7 @@ public class CtSph implements Sph {
 
     private Entry entryWithPriority(ResourceWrapper resourceWrapper, int count, boolean prioritized, Object... args)
         throws BlockException {
+        // 获取Context
         Context context = ContextUtil.getContext();
         if (context instanceof NullContext) {
             // The {@link NullContext} indicates that the amount of context has exceeded the threshold,
@@ -129,22 +130,27 @@ public class CtSph implements Sph {
         }
 
         // Global switch is close, no rule checking will do.
+        // 全局开关关闭，不校验规则
         if (!Constants.ON) {
             return new CtEntry(resourceWrapper, null, context);
         }
 
+        // 创建拦截链链
         ProcessorSlot<Object> chain = lookProcessChain(resourceWrapper);
 
         /*
          * Means amount of resources (slot chain) exceeds {@link Constants.MAX_SLOT_CHAIN_SIZE},
          * so no rule checking will be done.
          */
+        // 不需要进行规则校验
         if (chain == null) {
             return new CtEntry(resourceWrapper, null, context);
         }
 
+        // 新建Entry并进行校验
         Entry e = new CtEntry(resourceWrapper, chain, context);
         try {
+            // 进入方法
             chain.entry(context, resourceWrapper, null, count, prioritized, args);
         } catch (BlockException e1) {
             e.exit(count, args);
@@ -158,6 +164,7 @@ public class CtSph implements Sph {
 
     /**
      * Do all {@link Rule}s checking about the resource.
+     * 对资源进行规则验证
      *
      * <p>Each distinct resource will use a {@link ProcessorSlot} to do rules checking. Same resource will use
      * same {@link ProcessorSlot} globally. </p>
@@ -194,6 +201,7 @@ public class CtSph implements Sph {
     ProcessorSlot<Object> lookProcessChain(ResourceWrapper resourceWrapper) {
         ProcessorSlotChain chain = chainMap.get(resourceWrapper);
         if (chain == null) {
+            // init
             synchronized (LOCK) {
                 chain = chainMap.get(resourceWrapper);
                 if (chain == null) {
@@ -202,7 +210,9 @@ public class CtSph implements Sph {
                         return null;
                     }
 
+                    // 初始化拦截链
                     chain = SlotChainProvider.newSlotChain();
+                    // update chainMap
                     Map<ResourceWrapper, ProcessorSlotChain> newMap = new HashMap<ResourceWrapper, ProcessorSlotChain>(
                         chainMap.size() + 1);
                     newMap.putAll(chainMap);

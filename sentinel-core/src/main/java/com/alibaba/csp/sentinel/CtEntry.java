@@ -24,6 +24,7 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 
 /**
  * Linked entry within current context.
+ * 链表形式的Entry
  *
  * @author jialiang.linjl
  * @author Eric Zhao
@@ -33,7 +34,9 @@ class CtEntry extends Entry {
     protected Entry parent = null;
     protected Entry child = null;
 
+    // 拦截链
     protected ProcessorSlot<Object> chain;
+    // 上下文信息
     protected Context context;
 
     CtEntry(ResourceWrapper resourceWrapper, ProcessorSlot<Object> chain, Context context) {
@@ -41,6 +44,7 @@ class CtEntry extends Entry {
         this.chain = chain;
         this.context = context;
 
+        // 设置上一级entry(parent),并更新Context中的curEntry
         setUpEntryFor(context);
     }
 
@@ -49,10 +53,12 @@ class CtEntry extends Entry {
         if (context instanceof NullContext) {
             return;
         }
+        // 设置上级Entry的链接关系
         this.parent = context.getCurEntry();
         if (parent != null) {
             ((CtEntry)parent).child = this;
         }
+        // 更新Context的CurEntry
         context.setCurEntry(this);
     }
 
@@ -61,28 +67,37 @@ class CtEntry extends Entry {
         trueExit(count, args);
     }
 
+    // 退出上下文
     protected void exitForContext(Context context, int count, Object... args) throws ErrorEntryFreeException {
         if (context != null) {
             // Null context should exit without clean-up.
             if (context instanceof NullContext) {
                 return;
             }
+
+            // 非context当前entry，异常情况
             if (context.getCurEntry() != this) {
+                // 当前Entry的资源名称
                 String curEntryNameInContext = context.getCurEntry() == null ? null : context.getCurEntry().getResourceWrapper().getName();
                 // Clean previous call stack.
+                // 当前Entry
                 CtEntry e = (CtEntry)context.getCurEntry();
+                // 退出所有entry
                 while (e != null) {
                     e.exit(count, args);
                     e = (CtEntry)e.parent;
                 }
+                // 异常
                 String errorMessage = String.format("The order of entry exit can't be paired with the order of entry"
                     + ", current entry in context: <%s>, but expected: <%s>", curEntryNameInContext, resourceWrapper.getName());
                 throw new ErrorEntryFreeException(errorMessage);
             } else {
+                // 退出entry
                 if (chain != null) {
                     chain.exit(context, resourceWrapper, count, args);
                 }
                 // Restore the call stack.
+                // 还原parent
                 context.setCurEntry(parent);
                 if (parent != null) {
                     ((CtEntry)parent).child = null;
