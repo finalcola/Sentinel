@@ -28,6 +28,7 @@ import com.alibaba.csp.sentinel.slots.statistic.data.MetricBucket;
  */
 public class OccupiableBucketLeapArray extends LeapArray<MetricBucket> {
 
+    // 用于借记的计数数组
     private final FutureBucketLeapArray borrowArray;
 
     public OccupiableBucketLeapArray(int sampleCount, int intervalInMs) {
@@ -40,6 +41,7 @@ public class OccupiableBucketLeapArray extends LeapArray<MetricBucket> {
     public MetricBucket newEmptyBucket(long time) {
         MetricBucket newBucket = new MetricBucket();
 
+        // 合并已经借记出去的数量
         MetricBucket borrowBucket = borrowArray.getWindowValue(time);
         if (borrowBucket != null) {
             newBucket.reset(borrowBucket);

@@ -70,13 +70,16 @@ public class FlowRuleChecker {
             return true;
         }
 
+        // 集群模式
         if (rule.isClusterMode()) {
             return passClusterCheck(rule, context, node, acquireCount, prioritized);
         }
 
+        // 本地检查
         return passLocalCheck(rule, context, node, acquireCount, prioritized);
     }
 
+    // 本地检查
     private static boolean passLocalCheck(FlowRule rule, Context context, DefaultNode node, int acquireCount,
                                           boolean prioritized) {
         // 根据请求和策略选择Node

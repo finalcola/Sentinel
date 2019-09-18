@@ -43,7 +43,8 @@ import com.alibaba.csp.sentinel.util.StringUtil;
  */
 public final class DegradeRuleManager {
 
-    private static final Map<String, Set<DegradeRule>> degradeRules = new ConcurrentHashMap<>();
+    // 降级规则
+    private static final Map<String/*resource*/, Set<DegradeRule>> degradeRules = new ConcurrentHashMap<>();
 
     private static final RulePropertyListener LISTENER = new RulePropertyListener();
     private static SentinelProperty<List<DegradeRule>> currentProperty
@@ -72,11 +73,13 @@ public final class DegradeRuleManager {
     public static void checkDegrade(ResourceWrapper resource, Context context, DefaultNode node, int count)
         throws BlockException {
 
+        // 获取降级规则
         Set<DegradeRule> rules = degradeRules.get(resource.getName());
         if (rules == null) {
             return;
         }
 
+        // 校验规则
         for (DegradeRule rule : rules) {
             if (!rule.passCheck(context, node, count)) {
                 throw new DegradeException(rule.getLimitApp(), rule);

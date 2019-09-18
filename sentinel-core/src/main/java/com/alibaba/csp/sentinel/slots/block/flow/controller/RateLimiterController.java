@@ -23,11 +23,13 @@ import com.alibaba.csp.sentinel.util.TimeUtil;
 import com.alibaba.csp.sentinel.node.Node;
 
 /**
+ * 匀速排队，计算请求资源需要的平均时长，进行排队
  * @author jialiang.linjl
  */
 public class RateLimiterController implements TrafficShapingController {
 
     private final int maxQueueingTimeMs;
+    // 允许通过的数量
     private final double count;
 
     private final AtomicLong latestPassedTime = new AtomicLong(-1);
@@ -56,29 +58,37 @@ public class RateLimiterController implements TrafficShapingController {
 
         long currentTime = TimeUtil.currentTimeMillis();
         // Calculate the interval between every two requests.
+        // 计算请求需要排队的时长
         long costTime = Math.round(1.0 * (acquireCount) / count * 1000);
 
         // Expected pass time of this request.
+        // 期望的通过时间
         long expectedTime = costTime + latestPassedTime.get();
 
+        // 如果期望时间小于当前时间，则直接通过
         if (expectedTime <= currentTime) {
             // Contention may exist here, but it's okay.
             latestPassedTime.set(currentTime);
             return true;
         } else {
             // Calculate the time to wait.
+            // 计算需要等待的时间
             long waitTime = costTime + latestPassedTime.get() - TimeUtil.currentTimeMillis();
+            // 超出最大等待时间，则直接返回false
             if (waitTime > maxQueueingTimeMs) {
                 return false;
             } else {
+                // 更新latestPassedTime
                 long oldTime = latestPassedTime.addAndGet(costTime);
                 try {
+                    // 再次检查是否超出最大等待时间（可能有其他线程也在排队）
                     waitTime = oldTime - TimeUtil.currentTimeMillis();
                     if (waitTime > maxQueueingTimeMs) {
                         latestPassedTime.addAndGet(-costTime);
                         return false;
                     }
                     // in race condition waitTime may <= 0
+                    // 休眠waitTime时间
                     if (waitTime > 0) {
                         Thread.sleep(waitTime);
                     }

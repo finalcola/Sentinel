@@ -65,10 +65,14 @@ public class SentinelDubboProviderFilter implements Filter {
             // at entrance of invocation chain only (for inbound traffic).
             // 创建Context(ThreadLocal)
             ContextUtil.enter(resourceName, application);
+            // 接口限流
             interfaceEntry = SphU.entry(interfaceName, EntryType.IN);
+            // 方法限流
             methodEntry = SphU.entry(resourceName, EntryType.IN, 1, invocation.getArguments());
 
+            // 执行方法
             Result result = invoker.invoke(invocation);
+            // 记录异常
             if (result.hasException()) {
                 Throwable e = result.getException();
                 // Record common exception.
@@ -77,12 +81,15 @@ public class SentinelDubboProviderFilter implements Filter {
             }
             return result;
         } catch (BlockException e) {
+            // 熔断降级
             return DubboFallbackRegistry.getProviderFallback().handle(invoker, invocation, e);
         } catch (RpcException e) {
+            // 记录异常
             Tracer.traceEntry(e, interfaceEntry);
             Tracer.traceEntry(e, methodEntry);
             throw e;
         } finally {
+            // 退出
             if (methodEntry != null) {
                 methodEntry.exit(1, invocation.getArguments());
             }

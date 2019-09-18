@@ -38,10 +38,10 @@ public class DefaultSlotChainBuilder implements SlotChainBuilder {
     @Override
     public ProcessorSlotChain build() {
         ProcessorSlotChain chain = new DefaultProcessorSlotChain();
-        chain.addLast(new NodeSelectorSlot());  // 创建contextName对应的Node
+        chain.addLast(new NodeSelectorSlot());  // 构造调用链
         chain.addLast(new ClusterBuilderSlot());    // 创建ClusterNode
-        chain.addLast(new LogSlot());   // 异常处理+日志打印
-        chain.addLast(new StatisticSlot()); // 更新请求数(ClusterNode、Origin node、DefaultNode)
+        chain.addLast(new LogSlot());   // 异常日志打印
+        chain.addLast(new StatisticSlot()); // （执行完成后）更新请求数(ClusterNode、Origin node、DefaultNode)
         chain.addLast(new SystemSlot());    // 系统级限流
         chain.addLast(new AuthoritySlot()); // origin黑名单拦截
         chain.addLast(new FlowSlot());  // ** 流控校验

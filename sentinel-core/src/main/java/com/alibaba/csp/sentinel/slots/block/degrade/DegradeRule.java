@@ -183,6 +183,7 @@ public class DegradeRule extends AbstractRule {
 
     @Override
     public boolean passCheck(Context context, DefaultNode node, int acquireCount, Object... args) {
+        // 已经熔断，直接返回
         if (cut.get()) {
             return false;
         }
@@ -193,17 +194,23 @@ public class DegradeRule extends AbstractRule {
         }
 
         if (grade == RuleConstant.DEGRADE_GRADE_RT) {
+            // 往返时间超时
+
             double rt = clusterNode.avgRt();
+            // 未超过限制，重置计数
             if (rt < this.count) {
                 passCount.set(0);
                 return true;
             }
 
             // Sentinel will degrade the service only if count exceeds.
+            // 多次往返时间超时才会进行降级
             if (passCount.incrementAndGet() < rtSlowRequestAmount) {
                 return true;
             }
         } else if (grade == RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO) {
+            // 异常次数比例
+
             double exception = clusterNode.exceptionQps();
             double success = clusterNode.successQps();
             double total = clusterNode.totalQps();
@@ -214,22 +221,29 @@ public class DegradeRule extends AbstractRule {
 
             // In the same aligned statistic time window,
             // "success" (aka. completed count) = exception count + non-exception count (realSuccess)
+            // 成功请求大于0且异常次数小于阈值
             double realSuccess = success - exception;
             if (realSuccess <= 0 && exception < minRequestAmount) {
                 return true;
             }
 
+            // 异常比例小于限制
             if (exception / success < count) {
                 return true;
             }
         } else if (grade == RuleConstant.DEGRADE_GRADE_EXCEPTION_COUNT) {
+            // 异常次数
+
+            // 异常次数小于阈值
             double exception = clusterNode.totalException();
             if (exception < count) {
                 return true;
             }
         }
 
+        // 熔断，进行降级
         if (cut.compareAndSet(false, true)) {
+            // 调度恢复任务
             ResetTask resetTask = new ResetTask(this);
             pool.schedule(resetTask, timeWindow, TimeUnit.SECONDS);
         }

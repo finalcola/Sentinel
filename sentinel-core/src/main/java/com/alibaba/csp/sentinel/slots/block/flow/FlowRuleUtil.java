@@ -102,13 +102,16 @@ public final class FlowRuleUtil {
             if (filter != null && !filter.test(rule)) {
                 continue;
             }
+            // 默认拦截所有app
             if (StringUtil.isBlank(rule.getLimitApp())) {
                 rule.setLimitApp(RuleConstant.LIMIT_APP_DEFAULT);
             }
 
+            // 生成rater
             TrafficShapingController rater = generateRater(rule);
             rule.setRater(rater);
 
+            // 分组的key
             K key = groupFunction.apply(rule);
             if (key == null) {
                 continue;
@@ -123,6 +126,7 @@ public final class FlowRuleUtil {
 
             flowRules.add(rule);
         }
+        // 排序
         Comparator<FlowRule> comparator = new FlowRuleComparator();
         for (Entry<K, Set<FlowRule>> entries : tmpMap.entrySet()) {
             List<FlowRule> rules = new ArrayList<>(entries.getValue());
@@ -140,9 +144,11 @@ public final class FlowRuleUtil {
         if (rule.getGrade() == RuleConstant.FLOW_GRADE_QPS) {
             switch (rule.getControlBehavior()) {
                 case RuleConstant.CONTROL_BEHAVIOR_WARM_UP:
+                    // warmUp
                     return new WarmUpController(rule.getCount(), rule.getWarmUpPeriodSec(),
                         ColdFactorProperty.coldFactor);
                 case RuleConstant.CONTROL_BEHAVIOR_RATE_LIMITER:
+                    // 匀速排队
                     return new RateLimiterController(rule.getMaxQueueingTimeMs(), rule.getCount());
                 case RuleConstant.CONTROL_BEHAVIOR_WARM_UP_RATE_LIMITER:
                     return new WarmUpRateLimiterController(rule.getCount(), rule.getWarmUpPeriodSec(),
@@ -152,6 +158,7 @@ public final class FlowRuleUtil {
                     // Default mode or unknown mode: default traffic shaping controller (fast-reject).
             }
         }
+        // 快速失败：检查线程数或qps是否超过阈值，不符合则返回false
         return new DefaultController(rule.getCount(), rule.getGrade());
     }
 

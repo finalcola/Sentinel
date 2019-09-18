@@ -289,6 +289,7 @@ public class StatisticNode implements Node {
     @Override
     public long tryOccupyNext(long currentTime, int acquireCount, double threshold) {
         double maxCount = threshold * IntervalProperty.INTERVAL / 1000;
+        // 已经借记出去的token数
         long currentBorrow = rollingCounterInSecond.waiting();
         if (currentBorrow >= maxCount) {
             return OccupyTimeoutProperty.getOccupyTimeout();

@@ -24,7 +24,7 @@ import com.alibaba.csp.sentinel.util.TimeUtil;
 
 /**
  * Default throttling controller (immediately reject strategy).
- *
+ *   快速失败：检查线程数或qps是否超过阈值，不符合则返回false
  * @author jialiang.linjl
  * @author Eric Zhao
  */
@@ -47,16 +47,22 @@ public class DefaultController implements TrafficShapingController {
 
     @Override
     public boolean canPass(Node node, int acquireCount, boolean prioritized) {
+        // 当前已发出的token数量
         int curCount = avgUsedTokens(node);
+        // 是否已经达到阈值
         if (curCount + acquireCount > count) {
+            // 优先请求，且根据qps进行拦截，则尝试抢占下一级的qps
             if (prioritized && grade == RuleConstant.FLOW_GRADE_QPS) {
                 long currentTime;
                 long waitInMs;
                 currentTime = TimeUtil.currentTimeMillis();
+                // 借记将来的token
                 waitInMs = node.tryOccupyNext(currentTime, acquireCount, count);
                 if (waitInMs < OccupyTimeoutProperty.getOccupyTimeout()) {
+                    // 抢占成功，记录借记数量
                     node.addWaitingRequest(currentTime + waitInMs, acquireCount);
                     node.addOccupiedPass(acquireCount);
+                    // 等待相应的时间
                     sleep(waitInMs);
 
                     // PriorityWaitException indicates that the request will pass after waiting for {@link @waitInMs}.
@@ -72,6 +78,7 @@ public class DefaultController implements TrafficShapingController {
         if (node == null) {
             return DEFAULT_AVG_USED_TOKENS;
         }
+        // 按照线程数进行限制 or qps进行限制
         return grade == RuleConstant.FLOW_GRADE_THREAD ? node.curThreadNum() : (int)(node.passQps());
     }
 
