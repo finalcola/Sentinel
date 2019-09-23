@@ -52,6 +52,7 @@ public class SentinelDefaultTokenServer implements ClusterTokenServer {
 
     public SentinelDefaultTokenServer(boolean embedded) {
         this.embedded = embedded;
+        // 添加server地址配置的listener
         ClusterServerConfigManager.addTransportConfigChangeObserver(new ServerTransportConfigObserver() {
             @Override
             public void onTransportConfigChange(ServerTransportConfig config) {
@@ -72,6 +73,7 @@ public class SentinelDefaultTokenServer implements ClusterTokenServer {
         }
     }
 
+    // 监听server地址变化，并重新启动server
     private synchronized void changeServerConfig(ServerTransportConfig config) {
         if (config == null || config.getPort() <= 0) {
             return;
@@ -84,8 +86,10 @@ public class SentinelDefaultTokenServer implements ClusterTokenServer {
             if (server != null) {
                 stopServer();
             }
+            // 创建server
             this.server = new NettyTransportServer(newPort);
             this.port = newPort;
+            // 启动server
             startServerIfScheduled();
         } catch (Exception ex) {
             RecordLog.warn("[SentinelDefaultTokenServer] Failed to apply modification to token server", ex);
@@ -95,7 +99,9 @@ public class SentinelDefaultTokenServer implements ClusterTokenServer {
     private void startServerIfScheduled() throws Exception {
         if (shouldStart.get()) {
             if (server != null) {
+                // 启动
                 server.start();
+                // 设置状态为集群模式
                 ClusterStateManager.markToServer();
                 if (embedded) {
                     RecordLog.info("[SentinelDefaultTokenServer] Running in embedded mode");
@@ -105,6 +111,7 @@ public class SentinelDefaultTokenServer implements ClusterTokenServer {
         }
     }
 
+    // 关闭当前server
     private void stopServer() throws Exception {
         if (server != null) {
             server.stop();
@@ -117,6 +124,7 @@ public class SentinelDefaultTokenServer implements ClusterTokenServer {
     private void handleEmbeddedStop() {
         String namespace = ConfigSupplierRegistry.getNamespaceSupplier().get();
         if (StringUtil.isNotEmpty(namespace)) {
+            // 删除保存的连接信息
             ConnectionManager.removeConnection(namespace, HostNameUtil.getIp());
         }
     }
@@ -129,10 +137,12 @@ public class SentinelDefaultTokenServer implements ClusterTokenServer {
             if (!ClusterServerConfigManager.getNamespaceSet().contains(namespace)) {
                 Set<String> namespaceSet = new HashSet<>(ClusterServerConfigManager.getNamespaceSet());
                 namespaceSet.add(namespace);
+                // 添加namespace
                 ClusterServerConfigManager.loadServerNamespaceSet(namespaceSet);
             }
 
             // Register self to connection group.
+            // 注册本地地址到namespace
             ConnectionManager.addConnection(namespace, HostNameUtil.getIp());
         }
     }

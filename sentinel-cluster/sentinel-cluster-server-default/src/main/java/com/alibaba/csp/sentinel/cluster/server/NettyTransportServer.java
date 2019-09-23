@@ -75,6 +75,7 @@ public class NettyTransportServer implements ClusterTokenServer {
             return;
         }
 
+        // 初始化netty组件
         ServerBootstrap b = new ServerBootstrap();
         this.bossGroup = new NioEventLoopGroup(1);
         this.workerGroup = new NioEventLoopGroup(DEFAULT_EVENT_LOOP_THREADS);
@@ -87,10 +88,10 @@ public class NettyTransportServer implements ClusterTokenServer {
                 public void initChannel(SocketChannel ch) throws Exception {
                     ChannelPipeline p = ch.pipeline();
                     p.addLast(new LengthFieldBasedFrameDecoder(1024, 0, 2, 0, 2));
-                    p.addLast(new NettyRequestDecoder());
-                    p.addLast(new LengthFieldPrepender(2));
-                    p.addLast(new NettyResponseEncoder());
-                    p.addLast(new TokenServerHandler(connectionPool));
+                    p.addLast(new NettyRequestDecoder()/*解析请求*/);
+                    p.addLast(new LengthFieldPrepender(2)/*写入data长度*/);
+                    p.addLast(new NettyResponseEncoder()/*写入响应*/);
+                    p.addLast(new TokenServerHandler(connectionPool)/*处理请求，更新连接池数据*/);
                 }
             })
             .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)

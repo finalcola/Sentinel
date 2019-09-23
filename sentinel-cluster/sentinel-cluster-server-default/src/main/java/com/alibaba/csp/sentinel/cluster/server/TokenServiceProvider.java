@@ -34,6 +34,7 @@ public final class TokenServiceProvider {
     private static final ServiceLoader<TokenService> LOADER = ServiceLoader.load(TokenService.class);
 
     static {
+        // 初始化
         resolveTokenServiceSpi();
     }
 
@@ -51,6 +52,7 @@ public final class TokenServiceProvider {
             }
         }
 
+        // 存在其他实现类，采用第一个;否则使用默认的
         if (hasOther) {
             // Pick the first.
             service = list.get(0);

@@ -31,7 +31,7 @@ import io.netty.channel.Channel;
 
 /**
  * Universal connection pool for connection management.
- *
+ * 管理netty的连接池
  * @author xuyue
  * @author Eric Zhao
  * @since 1.4.0
@@ -51,10 +51,13 @@ public class ConnectionPool {
      */
     private ScheduledFuture scanTaskFuture = null;
 
+    // 添加连接
     public void createConnection(Channel channel) {
         if (channel != null) {
+            // 封装channel为Connection,会保存连接的地址信息和最近读取时间戳
             Connection connection = new NettyConnection(channel, this);
 
+            // key=ip：port
             String connKey = getConnectionKey(channel);
             CONNECTION_MAP.put(connKey, connection);
         }
@@ -62,6 +65,7 @@ public class ConnectionPool {
 
     /**
      * Start the scan task for long-idle connections.
+     * 开启扫描任务：扫描空闲连接并关闭
      */
     private synchronized void startScan() {
         if (scanTaskFuture == null

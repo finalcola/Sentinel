@@ -78,6 +78,7 @@ public final class ConnectionManager {
         NAMESPACE_MAP.remove(address);
     }
 
+    // 删除保存的连接信息
     public static void removeConnection(String namespace, String address) {
         AssertUtil.assertNotBlank(namespace, "namespace should not be empty");
         AssertUtil.assertNotBlank(address, "address should not be empty");
@@ -90,6 +91,7 @@ public final class ConnectionManager {
         RecordLog.info("[ConnectionManager] Client <{0}> disconnected and removed from namespace <{1}>", address, namespace);
     }
 
+    // 注册namespace下的ip
     public static ConnectionGroup addConnection(String namespace, String address) {
         AssertUtil.assertNotBlank(namespace, "namespace should not be empty");
         AssertUtil.assertNotBlank(address, "address should not be empty");

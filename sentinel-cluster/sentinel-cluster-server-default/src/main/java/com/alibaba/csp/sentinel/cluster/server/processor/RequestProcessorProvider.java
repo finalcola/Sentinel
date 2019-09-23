@@ -23,21 +23,26 @@ import com.alibaba.csp.sentinel.cluster.annotation.RequestType;
 import com.alibaba.csp.sentinel.util.AssertUtil;
 
 /**
+ * 请求路由
  * @author Eric Zhao
  * @since 1.4.0
  */
 public final class RequestProcessorProvider {
 
+    // 请求映射器
     private static final Map<Integer, RequestProcessor> PROCESSOR_MAP = new ConcurrentHashMap<>();
 
     private static final ServiceLoader<RequestProcessor> SERVICE_LOADER = ServiceLoader.load(RequestProcessor.class);
 
     static {
+        // 加载处理器
         loadAndInit();
     }
 
     private static void loadAndInit() {
+        // 加载处理器，并建立映射关系
         for (RequestProcessor processor : SERVICE_LOADER) {
+            // 解析类型
             Integer type = parseRequestType(processor);
             if (type != null) {
                 PROCESSOR_MAP.put(type, processor);

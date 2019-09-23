@@ -32,7 +32,7 @@ public class SystemSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
     @Override
     public void entry(Context context, ResourceWrapper resourceWrapper, DefaultNode node, int count,
                       boolean prioritized, Object... args) throws Throwable {
-        // 系统限流(错误会抛出异常)
+        // 系统限流
         SystemRuleManager.checkSystem(resourceWrapper);
         fireEntry(context, resourceWrapper, node, count, prioritized, args);
     }

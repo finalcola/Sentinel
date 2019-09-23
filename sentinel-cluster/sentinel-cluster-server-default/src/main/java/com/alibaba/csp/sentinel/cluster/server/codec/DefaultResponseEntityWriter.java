@@ -34,6 +34,7 @@ public class DefaultResponseEntityWriter implements ResponseEntityWriter<Cluster
     @Override
     public void writeTo(ClusterResponse response, ByteBuf out) {
         int type = response.getType();
+        // 获取响应对应的writer
         EntityWriter<Object, ByteBuf> responseDataWriter = ResponseDataWriterRegistry.getWriter(type);
 
         if (responseDataWriter == null) {
@@ -41,7 +42,9 @@ public class DefaultResponseEntityWriter implements ResponseEntityWriter<Cluster
             RecordLog.warn("[NettyResponseEncoder] Cannot find matching writer for type <{0}>", response.getType());
             return;
         }
+        // 写入header
         writeHead(response, out);
+        // 委托writer进行写入
         responseDataWriter.writeTo(response.getData(), out);
     }
 

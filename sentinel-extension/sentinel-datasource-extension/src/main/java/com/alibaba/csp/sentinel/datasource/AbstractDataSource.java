@@ -44,6 +44,7 @@ public abstract class AbstractDataSource<S, T> implements ReadableDataSource<S, 
         return loadConfig(readSource());
     }
 
+    // 通过传入的parser进行解析
     public T loadConfig(S conf) throws Exception {
         T value = parser.convert(conf);
         return value;

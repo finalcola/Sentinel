@@ -26,6 +26,7 @@ import com.alibaba.csp.sentinel.cluster.response.data.FlowTokenResponseData;
 import com.alibaba.csp.sentinel.cluster.server.TokenServiceProvider;
 
 /**
+ * 分发token
  * @author Eric Zhao
  * @since 1.4.0
  */
@@ -40,6 +41,7 @@ public class FlowRequestProcessor implements RequestProcessor<FlowRequestData, F
         int count = request.getData().getCount();
         boolean prioritized = request.getData().isPriority();
 
+        // 获取token
         TokenResult result = tokenService.requestToken(flowId, count, prioritized);
         return toResponse(result, request);
     }

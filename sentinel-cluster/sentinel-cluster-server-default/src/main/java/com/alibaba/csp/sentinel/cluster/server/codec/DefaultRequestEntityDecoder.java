@@ -41,15 +41,18 @@ public class DefaultRequestEntityDecoder implements RequestEntityDecoder<ByteBuf
     @Override
     public ClusterRequest decode(ByteBuf source) {
         if (source.readableBytes() >= 5) {
+            // 请求头
             int xid = source.readInt();
             int type = source.readByte();
 
+            // 获取请求对应的解码器
             EntityDecoder<ByteBuf, ?> dataDecoder = RequestDataDecodeRegistry.getDecoder(type);
             if (dataDecoder == null) {
                 RecordLog.warn("Unknown type of request data decoder: {0}", type);
                 return null;
             }
 
+            // 解析请求
             Object data;
             if (source.readableBytes() == 0) {
                 data = null;

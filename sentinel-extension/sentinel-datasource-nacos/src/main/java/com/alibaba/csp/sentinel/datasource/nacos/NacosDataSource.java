@@ -91,6 +91,7 @@ public class NacosDataSource<T> extends AbstractDataSource<String, T> {
         this.groupId = groupId;
         this.dataId = dataId;
         this.properties = properties;
+        // 添加nacos监听器
         this.configListener = new Listener() {
             @Override
             public Executor getExecutor() {
@@ -101,12 +102,16 @@ public class NacosDataSource<T> extends AbstractDataSource<String, T> {
             public void receiveConfigInfo(final String configInfo) {
                 RecordLog.info(String.format("[NacosDataSource] New property value received for (properties: %s) (dataId: %s, groupId: %s): %s",
                     properties, dataId, groupId, configInfo));
+                // 解析配置
                 T newValue = NacosDataSource.this.parser.convert(configInfo);
                 // Update the new value to the property.
+                // 更新property
                 getProperty().updateValue(newValue);
             }
         };
+        // 初始化nacosListener
         initNacosListener();
+        // 加载初始配置
         loadInitialConfig();
     }
 
@@ -124,8 +129,10 @@ public class NacosDataSource<T> extends AbstractDataSource<String, T> {
 
     private void initNacosListener() {
         try {
+            // 创建nacos client
             this.configService = NacosFactory.createConfigService(this.properties);
             // Add config listener.
+            // 添加监听器
             configService.addListener(dataId, groupId, configListener);
         } catch (Exception e) {
             RecordLog.warn("[NacosDataSource] Error occurred when initializing Nacos data source", e);
@@ -133,6 +140,7 @@ public class NacosDataSource<T> extends AbstractDataSource<String, T> {
         }
     }
 
+    // 读取
     @Override
     public String readSource() throws Exception {
         if (configService == null) {

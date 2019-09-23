@@ -26,13 +26,16 @@ import com.alibaba.csp.sentinel.util.SpiLoader;
  */
 public final class ServerEntityCodecProvider {
 
+    // 解析请求
     private static RequestEntityDecoder requestEntityDecoder = null;
+    // 写入响应
     private static ResponseEntityWriter responseEntityWriter = null;
 
     static {
         resolveInstance();
     }
 
+    // API机制加载
     private static void resolveInstance() {
         ResponseEntityWriter writer = SpiLoader.loadFirstInstance(ResponseEntityWriter.class);
         if (writer == null) {

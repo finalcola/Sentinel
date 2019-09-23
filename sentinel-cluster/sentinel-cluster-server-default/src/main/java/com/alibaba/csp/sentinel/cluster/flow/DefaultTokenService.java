@@ -33,17 +33,21 @@ import com.alibaba.csp.sentinel.slots.block.flow.param.ParamFlowRule;
  */
 public class DefaultTokenService implements TokenService {
 
+    // 获取token
     @Override
     public TokenResult requestToken(Long ruleId, int acquireCount, boolean prioritized) {
+        // 校验请求是否合法
         if (notValidRequest(ruleId, acquireCount)) {
             return badRequest();
         }
         // The rule should be valid.
+        // 获取对应的流控规则
         FlowRule rule = ClusterFlowRuleManager.getFlowRuleById(ruleId);
         if (rule == null) {
             return new TokenResult(TokenResultStatus.NO_RULE_EXISTS);
         }
 
+        // 获取token
         return ClusterFlowChecker.acquireClusterToken(rule, acquireCount, prioritized);
     }
 

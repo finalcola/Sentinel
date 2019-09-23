@@ -22,14 +22,17 @@ public class ScanIdleConnectionTask implements Runnable {
     @Override
     public void run() {
         try {
+            // 最大空闲时间
             int idleSeconds = ClusterServerConfigManager.getIdleSeconds();
             long idleTimeMillis = idleSeconds * 1000;
             if (idleTimeMillis < 0) {
                 idleTimeMillis = ServerTransportConfig.DEFAULT_IDLE_SECONDS * 1000;
             }
             long now = System.currentTimeMillis();
+            // 遍历连接池
             List<Connection> connections = connectionPool.listAllConnection();
             for (Connection conn : connections) {
+                // 关闭空闲连接
                 if ((now - conn.getLastReadTime()) > idleTimeMillis) {
                     RecordLog.info(
                         String.format("[ScanIdleConnectionTask] The connection <%s:%d> has been idle for <%d>s. "
